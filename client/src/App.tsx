@@ -27,16 +27,16 @@ function Router() {
 
     // Redirect to auth if not logged in (but allow access to special pages)
     useEffect(() => {
-      if (!loading && !user && 
+      if (!isLoading && !user && 
           location !== "/auth" && 
           location !== "/onboarding" && 
           location !== "/clients-static" && 
           location !== "/") {
         setLocation("/auth");
       }
-    }, [user, loading, location, setLocation]);
+    }, [user, isLoading, location, setLocation]);
 
-    if (loading) {
+    if (isLoading) {
       return <LoadingScreen />;
     }
 
