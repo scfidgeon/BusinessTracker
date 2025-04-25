@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@shared/schema";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { ZodError } from "zod";
 import { toast } from "@/hooks/use-toast";
 
@@ -39,11 +39,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
+  const queryClient = useQueryClient();
+
   // Fetch current user
   const { data, isLoading, isError, refetch } = useQuery<User>({
     queryKey: ["/api/me"],
     retry: false,
-    queryFn: getQueryFn({ on401: "returnNull" })
+    queryFn: async ({ queryKey }) => {
+      try {
+        const res = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (res.status === 401) {
+          return null;
+        }
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch user: ${res.status}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        return null;
+      }
+    }
   });
 
   useEffect(() => {
@@ -55,9 +76,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string) => {
     try {
       setError(null);
-      const response = await apiRequest("POST", "/api/login", { username, password });
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
+      
       const userData = await response.json();
       setUser(userData);
+      
+      // Invalidate queries and refetch user data
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      
       navigate("/");
       toast({
         title: "Login successful",
@@ -76,8 +111,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiRequest("POST", "/api/logout", {});
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+      
       setUser(null);
+      
+      // Clear any cached queries
+      queryClient.clear();
+      
       navigate("/auth");
       toast({
         title: "Logged out",
@@ -97,9 +144,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: RegisterData) => {
     try {
       setError(null);
-      const response = await apiRequest("POST", "/api/register", userData);
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Registration failed");
+      }
+      
       const newUser = await response.json();
       setUser(newUser);
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      
       navigate("/client-setup");
       toast({
         title: "Registration successful",
