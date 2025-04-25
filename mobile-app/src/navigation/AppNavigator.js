@@ -14,6 +14,7 @@ import ClientDetailScreen from '../screens/ClientDetailScreen';
 import VisitsScreen from '../screens/VisitsScreen';
 import InvoicesScreen from '../screens/InvoicesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import QRCodeScreen from '../screens/QRCodeScreen';
 
 // Create navigators
 const Stack = createNativeStackNavigator();
@@ -35,6 +36,7 @@ function AuthNavigator() {
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ title: 'Connect Expo' }} />
     </Stack.Navigator>
   );
 }
@@ -103,6 +105,15 @@ function TabNavigator() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Connect"
+        component={QRCodeScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="qr-code" size={size} color={color} />
           ),
         }}
       />

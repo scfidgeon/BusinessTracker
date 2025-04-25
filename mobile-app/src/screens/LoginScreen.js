@@ -133,6 +133,14 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.registerButton}>Register</Text>
               </TouchableOpacity>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.qrButton}
+              onPress={() => navigation.navigate('QRCode')}
+            >
+              <MaterialIcons name="qr-code" size={20} color="#4F46E5" />
+              <Text style={styles.qrButtonText}>Show QR Code for Expo</Text>
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.version}>v1.0.0</Text>
@@ -258,5 +266,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontSize: 12,
+  },
+  qrButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    backgroundColor: '#f9fafb',
+  },
+  qrButtonText: {
+    marginLeft: 8,
+    color: '#4F46E5',
+    fontWeight: '500',
   },
 });
