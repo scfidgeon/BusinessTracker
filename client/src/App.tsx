@@ -5,6 +5,7 @@ import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/onboarding";
 import ClientSetup from "@/pages/client-setup";
 import Home from "@/pages/home";
+import HomePage from "@/pages/home-page";
 import ClientsPage from "@/pages/clients-new";
 import ClientsStatic from "@/pages/clients-static";
 import Invoices from "@/pages/invoices";
@@ -20,9 +21,13 @@ function Router() {
     const { user, loading } = useAuth();
     const [location, setLocation] = useLocation();
 
-    // Redirect to auth if not logged in
+    // Redirect to auth if not logged in (but allow access to special pages)
     useEffect(() => {
-      if (!loading && !user && location !== "/auth" && location !== "/onboarding") {
+      if (!loading && !user && 
+          location !== "/auth" && 
+          location !== "/onboarding" && 
+          location !== "/clients-static" && 
+          location !== "/") {
         setLocation("/auth");
       }
     }, [user, loading, location, setLocation]);
@@ -44,7 +49,8 @@ function Router() {
             <Route path="/clients-static" component={ClientsStatic} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/settings" component={Settings} />
-            <Route path="/" component={Home} />
+            <Route path="/home" component={Home} />
+            <Route path="/" component={HomePage} />
             <Route component={NotFound} />
           </Switch>
         </div>
@@ -62,6 +68,7 @@ function Router() {
           <Switch>
             <Route path="/auth" component={AuthPage} />
             <Route path="/clients-static" component={ClientsStatic} />
+            <Route path="/" component={HomePage} />
             <Route component={AuthPage} />
           </Switch>
         </div>

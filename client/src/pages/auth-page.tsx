@@ -148,6 +148,18 @@ const AuthPage = () => {
                   Register
                 </Link>
               </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <Link href="/clients-static">
+                  <Button 
+                    type="button"
+                    className="w-full" 
+                    variant="outline"
+                  >
+                    View Clients Demo
+                  </Button>
+                </Link>
+              </div>
             </form>
           </CardContent>
         </Card>
