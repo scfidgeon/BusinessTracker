@@ -2,21 +2,29 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ChevronRight, History } from "lucide-react";
+import { Plus, Search, ChevronRight, History, MapPin, Navigation, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+interface ClientData {
+  id: number;
+  name: string;
+  address: string;
+  notes: string | null;
+}
 
 const ClientsStatic = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   
   // Client data with useState to enable adding new clients
-  const [clients, setClients] = useState([
+  const [clients, setClients] = useState<ClientData[]>([
     {
       id: 1,
       name: "Test Client",
@@ -38,7 +46,7 @@ const ClientsStatic = () => {
     }
     
     // Create a new client and add it to the list
-    const newClient = {
+    const newClient: ClientData = {
       id: clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1,
       name,
       address,
@@ -67,13 +75,23 @@ const ClientsStatic = () => {
     <div className="min-h-screen pb-24 px-4 pt-4 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Your Clients</h2>
-        <Button
-          onClick={() => setAddClientDialogOpen(true)}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add Client
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMapDialogOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-1" />
+            Map Clients
+          </Button>
+          <Button
+            onClick={() => setAddClientDialogOpen(true)}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Client
+          </Button>
+        </div>
       </div>
       
       <div className="relative mb-4">
@@ -196,6 +214,56 @@ const ClientsStatic = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Map Clients Dialog */}
+      <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Client Locations</DialogTitle>
+            <DialogDescription>
+              View all your client locations on a map
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="relative bg-gray-100 dark:bg-gray-800 h-[400px] rounded-md overflow-hidden flex flex-col items-center justify-center">
+              <Map className="h-16 w-16 text-gray-400 mb-4" />
+              <div className="text-center px-4">
+                <h3 className="text-lg font-medium mb-2">Map Visualization</h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-6">
+                  This would display an interactive map with all your client locations. 
+                  Each pin would represent a client address, and you could click on them for more details.
+                </p>
+                
+                <div className="space-y-3 max-w-md mx-auto">
+                  {clients.map(client => (
+                    <div key={client.id} className="flex items-center p-3 bg-white dark:bg-gray-700 rounded-md shadow-sm">
+                      <div className="bg-primary-100 dark:bg-primary-900 p-2 rounded-full mr-3">
+                        <MapPin className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{client.name}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{client.address}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="ml-2">
+                        <Navigation className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              onClick={() => setMapDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
