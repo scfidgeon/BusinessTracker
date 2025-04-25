@@ -2,6 +2,8 @@ import {
   User, InsertUser, Client, InsertClient, Visit, InsertVisit, 
   Invoice, InsertInvoice
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // User operations
@@ -33,6 +35,9 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: number, invoiceData: Partial<Invoice>): Promise<Invoice | undefined>;
   markVisitAsInvoiced(visitId: number): Promise<Visit | undefined>;
+  
+  // Session store
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {

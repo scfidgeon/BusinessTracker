@@ -1,11 +1,12 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, insertUserSchema } from "@shared/schema";
+import { ZodError } from "zod";
 
 declare global {
   namespace Express {
@@ -95,8 +96,21 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
+      try {
+        // Validate the user input using insertUserSchema
+        const userData = insertUserSchema.parse(req.body);
+        
+        // Additional validation for business hours format
+        const businessHours = JSON.parse(userData.businessHours);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({ message: error.errors });
+        }
+        throw error;
+      }
+      
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
@@ -118,46 +132,56 @@ export function setupAuth(app: Express) {
         res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
-      next(error);
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Failed to register user" });
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message?: string } | undefined) => {
       if (err) {
-        return next(err);
+        console.error("Login authentication error:", err);
+        return res.status(500).json({ message: "Internal server error during login" });
       }
       
       if (!user) {
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       
-      req.login(user, (err) => {
-        if (err) {
-          return next(err);
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Login session error:", loginErr);
+          return res.status(500).json({ message: "Failed to establish login session" });
         }
         
         // Don't send the password back
         const { password, ...userWithoutPassword } = user;
+        console.log("Login successful:", userWithoutPassword);
         return res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
     req.logout((err) => {
-      if (err) return next(err);
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Failed to logout" });
+      }
       res.status(200).json({ message: "Logged out successfully" });
     });
   });
 
-  app.get("/api/me", (req, res) => {
+  app.get("/api/me", (req: Request, res: Response) => {
+    console.log("Request for /api/me, authenticated:", req.isAuthenticated());
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
     // Don't send the password back
     const { password, ...userWithoutPassword } = req.user as SelectUser;
+    console.log("Current user:", userWithoutPassword);
     res.json(userWithoutPassword);
   });
 }
