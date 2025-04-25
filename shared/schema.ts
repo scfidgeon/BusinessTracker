@@ -51,6 +51,9 @@ export const visits = pgTable("visits", {
   longitude: doublePrecision("longitude"),
   isKnownLocation: boolean("is_known_location").default(false),
   hasInvoice: boolean("has_invoice").default(false),
+  serviceType: text("service_type"), // Type of service provided
+  serviceDetails: text("service_details"), // Details about the service
+  billableAmount: doublePrecision("billable_amount"), // Amount that can be billed for the service
 });
 
 export const insertVisitSchema = createInsertSchema(visits).pick({
@@ -63,6 +66,9 @@ export const insertVisitSchema = createInsertSchema(visits).pick({
   latitude: true,
   longitude: true,
   isKnownLocation: true,
+  serviceType: true,
+  serviceDetails: true,
+  billableAmount: true,
 });
 
 export const invoices = pgTable("invoices", {
@@ -110,3 +116,52 @@ export const businessHoursSchema = z.object({
 });
 
 export type BusinessHours = z.infer<typeof businessHoursSchema>;
+
+// Service types schema
+export const serviceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  defaultRate: z.number().optional(), // Default hourly or flat rate
+});
+
+export type Service = z.infer<typeof serviceSchema>;
+
+// Common services for different business types
+export const SERVICE_TYPES = {
+  "Service Provider": [
+    { id: "consultation", name: "Consultation", description: "Initial assessment and consultation services" },
+    { id: "repair", name: "Repair Service", description: "Fixing or repairing existing systems or equipment" },
+    { id: "maintenance", name: "Maintenance", description: "Regular upkeep and preventative maintenance" },
+    { id: "installation", name: "Installation", description: "Installing new equipment or systems" },
+    { id: "inspection", name: "Inspection", description: "Safety or quality inspections" },
+  ],
+  "Contractor": [
+    { id: "construction", name: "Construction", description: "Building or construction services" },
+    { id: "remodeling", name: "Remodeling", description: "Home or business remodeling services" },
+    { id: "electrical", name: "Electrical Work", description: "Electrical installation or repair" },
+    { id: "plumbing", name: "Plumbing", description: "Plumbing installation or repair" },
+    { id: "roofing", name: "Roofing", description: "Roof installation or repair" },
+  ],
+  "Home Services": [
+    { id: "cleaning", name: "Cleaning", description: "Home or office cleaning services" },
+    { id: "landscaping", name: "Landscaping", description: "Yard maintenance and landscaping" },
+    { id: "pest_control", name: "Pest Control", description: "Pest elimination and prevention" },
+    { id: "carpet_cleaning", name: "Carpet Cleaning", description: "Deep carpet and upholstery cleaning" },
+    { id: "window_cleaning", name: "Window Cleaning", description: "Window washing services" },
+  ],
+  "IT Consultant": [
+    { id: "network_setup", name: "Network Setup", description: "Installing and configuring networks" },
+    { id: "troubleshooting", name: "Troubleshooting", description: "Diagnosing and fixing technical issues" },
+    { id: "software_installation", name: "Software Installation", description: "Installing and configuring software" },
+    { id: "data_recovery", name: "Data Recovery", description: "Recovering lost or damaged data" },
+    { id: "security_audit", name: "Security Audit", description: "Evaluating and improving security" },
+  ],
+  "Healthcare Provider": [
+    { id: "examination", name: "Examination", description: "Patient examination and diagnosis" },
+    { id: "treatment", name: "Treatment", description: "Medical treatment and therapy" },
+    { id: "followup", name: "Follow-up Visit", description: "Follow-up care and checkups" },
+    { id: "test", name: "Medical Test", description: "Conducting medical tests" },
+    { id: "consultation", name: "Medical Consultation", description: "Professional medical consultation" },
+  ],
+};
