@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth-context";
 
 const AuthPage = () => {
   const [username, setUsername] = useState("demo"); // Prefill with test user
@@ -14,14 +13,6 @@ const AuthPage = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [, navigate] = useLocation();
-  const { login, user } = useAuth();
-  
-  // If user is already logged in, redirect to home
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,12 +26,62 @@ const AuthPage = () => {
     }
     
     try {
+      // Direct fetch call for login
       console.log("Attempting login with:", { username, password });
-      await login(username, password);
-      // Login function in auth context handles navigation and success toast
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Login response not OK:", response.status, errorText);
+        throw new Error("Login failed: " + errorText);
+      }
+      
+      const userData = await response.json();
+      console.log("Login successful:", userData);
+      
+      // Check if user data was actually returned
+      if (!userData || !userData.id) {
+        console.error("No user data returned from login");
+        throw new Error("Login failed: No user data returned");
+      }
+      
+      // Show success message
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${userData.username}!`,
+      });
+      
+      // Update session status by fetching the current user
+      try {
+        const meResponse = await fetch("/api/me", {
+          credentials: "include"
+        });
+        
+        if (meResponse.ok) {
+          const currentUser = await meResponse.json();
+          console.log("Current user:", currentUser);
+        }
+      } catch (error) {
+        console.warn("Could not fetch current user, but continuing anyway", error);
+      }
+      
+      // Navigate to homepage
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       setAuthError("Invalid username or password");
+      toast({
+        title: "Login failed",
+        description: "Invalid username or password",
+        variant: "destructive",
+      });
     } finally {
       setIsLoggingIn(false);
     }
