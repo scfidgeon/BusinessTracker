@@ -6,9 +6,9 @@ import { useLocation } from "@/contexts/location-context";
 import { useTime } from "@/hooks/use-time";
 import { useAuth } from "@/contexts/auth-context";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, ClipboardCheck, DollarSign } from "lucide-react";
 import { Visit, Client } from "@shared/schema";
-import { formatDuration, formatTimeRange } from "@/lib/location-utils";
+import { formatDuration, formatTimeRange, formatPrice } from "@/lib/location-utils";
 import CheckInModal from "@/components/modals/check-in-modal";
 import EndOfDayModal from "@/components/modals/end-of-day-modal";
 import { differenceInSeconds } from "date-fns";
@@ -182,6 +182,14 @@ const Home = () => {
                         <h4 className="font-semibold">
                           {getClientName(visit.clientId)}
                         </h4>
+                        {visit.serviceType && (
+                          <div className="flex items-center mt-1">
+                            <ClipboardCheck className="h-4 w-4 text-gray-400 mr-1" />
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {visit.serviceType}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center mt-1">
                           <Clock className="h-4 w-4 text-gray-400 mr-1" />
                           <span className="text-sm text-gray-500">
@@ -194,6 +202,19 @@ const Home = () => {
                             {formatDuration(visit.duration)}
                           </span>
                         </div>
+                        {visit.billableAmount && (
+                          <div className="flex items-center mt-1">
+                            <DollarSign className="h-4 w-4 text-green-500 mr-1" />
+                            <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                              {formatPrice(visit.billableAmount)}
+                            </span>
+                          </div>
+                        )}
+                        {visit.serviceDetails && (
+                          <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+                            {visit.serviceDetails}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col items-end">
                         {visit.hasInvoice ? (

@@ -201,14 +201,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Extract service-related fields from request
+      const { serviceType, serviceDetails, billableAmount, notes } = req.body;
+      
       const visitData = insertVisitSchema.parse({
         userId,
-        clientId: matchedClient?.id || null,
+        clientId: matchedClient?.id || (req.body.clientId ? parseInt(req.body.clientId) : null),
         address: address || (matchedClient ? matchedClient.address : "Unknown location"),
         startTime: new Date(),
         latitude,
         longitude,
-        isKnownLocation
+        isKnownLocation,
+        serviceType,
+        serviceDetails,
+        billableAmount
       });
 
       const newVisit = await storage.createVisit(visitData);

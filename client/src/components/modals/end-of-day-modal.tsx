@@ -7,6 +7,8 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceStrict, format } from "date-fns";
 import { LoadingSpinner } from "../ui/loading";
+import { DollarSign, ClipboardCheck, Clock } from "lucide-react";
+import { formatPrice } from "@/lib/location-utils";
 
 interface EndOfDayModalProps {
   open: boolean;
@@ -20,10 +22,19 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
   
   const generateInvoice = useMutation({
     mutationFn: async (visitId: number) => {
+      const visit = visits.find(v => v.id === visitId);
+      
+      if (!visit) {
+        throw new Error("Visit not found");
+      }
+      
+      // Calculate the amount based on billable amount if available
+      const amount = calculateAmount(visit);
+      
       const response = await apiRequest("POST", "/api/invoices", {
         visitId,
-        amount: calculateAmount(visits.find(v => v.id === visitId)!.duration || 0),
-        notes: "Automatically generated from visit"
+        amount,
+        notes: `Service: ${visit.serviceType || "Unknown"}\n${visit.serviceDetails || ""}`
       });
       return response.json();
     },
@@ -62,9 +73,17 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
     }
   };
   
-  // Simple placeholder calculation - $1 per minute
-  const calculateAmount = (minutes: number) => {
-    return minutes;
+  // Calculate invoice amount based on available data
+  const calculateAmount = (visit: Visit): number => {
+    // If billable amount is set, use that
+    if (visit.billableAmount) {
+      return visit.billableAmount;
+    }
+    
+    // Otherwise calculate based on duration (default rate: $1 per minute)
+    const minutes = visit.duration || 0;
+    const hourlyRate = 60; // $60/hour
+    return (minutes / 60) * hourlyRate;
   };
 
   return (
@@ -73,7 +92,7 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">End of Day Summary</DialogTitle>
           <DialogDescription className="text-sm text-gray-500">
-            You've completed your work day. Here's a summary of your visits:
+            Select completed visits to generate invoices
           </DialogDescription>
         </DialogHeader>
 
@@ -89,6 +108,7 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
               const endTime = new Date(visit.endTime || new Date());
               const duration = visit.duration || 0;
               const formattedTimeRange = `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`;
+              const amount = calculateAmount(visit);
               
               return (
                 <div 
@@ -104,11 +124,27 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
                     <h4 className="font-medium">
                       {visit.address}
                     </h4>
-                    <span className="text-sm text-gray-500">
-                      {formatDistanceStrict(startTime, endTime, { unit: 'minute' })}
+                    <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-300 text-xs rounded-full">
+                      {formatPrice(amount)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-2">{formattedTimeRange}</p>
+                  
+                  {visit.serviceType && (
+                    <div className="flex items-center text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      <ClipboardCheck className="h-3 w-3 mr-1" />
+                      <span>{visit.serviceType}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>{formattedTimeRange} ({duration} min)</span>
+                  </div>
+                  
+                  {visit.serviceDetails && (
+                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">{visit.serviceDetails}</p>
+                  )}
+                  
                   <div className="flex justify-end">
                     <Button
                       size="sm"
@@ -128,6 +164,20 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
           )}
         </div>
 
+        {selectedVisits.length > 0 && (
+          <div className="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700 mb-2">
+            <span className="text-sm font-medium">Total value:</span>
+            <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+              {formatPrice(
+                selectedVisits.reduce((sum, visitId) => {
+                  const visit = visits.find(v => v.id === visitId);
+                  return sum + (visit ? calculateAmount(visit) : 0);
+                }, 0)
+              )}
+            </span>
+          </div>
+        )}
+
         <DialogFooter className="flex justify-between gap-2">
           <Button 
             variant="outline" 
@@ -143,12 +193,15 @@ const EndOfDayModal = ({ open, onClose, visits }: EndOfDayModalProps) => {
             disabled={selectedVisits.length === 0 || isGeneratingInvoice}
           >
             {isGeneratingInvoice ? (
-              <>
-                <LoadingSpinner size="small" className="mr-2" />
-                Processing...
-              </>
+              <div className="flex items-center">
+                <span className="mr-2"><LoadingSpinner size="small" /></span>
+                <span>Processing...</span>
+              </div>
             ) : (
-              `Generate ${selectedVisits.length} Invoice${selectedVisits.length !== 1 ? 's' : ''}`
+              <div className="flex items-center">
+                <DollarSign className="h-4 w-4 mr-1" />
+                <span>Generate {selectedVisits.length} Invoice{selectedVisits.length !== 1 ? 's' : ''}</span>
+              </div>
             )}
           </Button>
         </DialogFooter>
