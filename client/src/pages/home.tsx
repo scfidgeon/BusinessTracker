@@ -18,9 +18,18 @@ const Home = () => {
   try {
     const { user } = useAuth();
     const { currentLocation, tracking, startTracking, stopTracking, currentVisit } = useLocation();
-    const { formattedDate, isBusinessHours, currentTime } = useTime(
-      user ? JSON.parse(user.businessHours) : null
-    );
+
+    // Parse business hours safely
+    let parsedBusinessHours = null;
+    try {
+      if (user && user.businessHours) {
+        parsedBusinessHours = JSON.parse(user.businessHours);
+      }
+    } catch (err) {
+      console.error("Failed to parse business hours:", err);
+    }
+    
+    const { formattedDate, isBusinessHours, currentTime } = useTime(parsedBusinessHours);
     
     const [checkInModalOpen, setCheckInModalOpen] = useState(false);
     const [endOfDayModalOpen, setEndOfDayModalOpen] = useState(false);
@@ -86,24 +95,33 @@ const Home = () => {
         // Check if it's time to show end of day prompts (end of business hours)
         if (
           user &&
+          user.businessHours &&
           isBusinessHours &&
           todayVisits.length > 0 &&
           todayVisits.some(v => !v.hasInvoice && v.endTime)
         ) {
-          const businessHours = JSON.parse(user.businessHours);
-          
-          // Parse end time
-          const [endHour, endMinute] = businessHours.endTime.split(":").map(Number);
-          
-          // Create Date object for end time today
-          const businessEnd = new Date();
-          businessEnd.setHours(endHour, endMinute, 0);
-          
-          // Check if we're within 10 minutes of business end time
-          const diffMinutes = differenceInSeconds(businessEnd, currentTime) / 60;
-          
-          if (diffMinutes >= 0 && diffMinutes <= 10) {
-            setEndOfDayModalOpen(true);
+          try {
+            const businessHours = JSON.parse(user.businessHours);
+            
+            if (!businessHours || !businessHours.endTime) {
+              return; // Exit if no valid business hours
+            }
+            
+            // Parse end time
+            const [endHour, endMinute] = businessHours.endTime.split(":").map(Number);
+            
+            // Create Date object for end time today
+            const businessEnd = new Date();
+            businessEnd.setHours(endHour, endMinute, 0);
+            
+            // Check if we're within 10 minutes of business end time
+            const diffMinutes = differenceInSeconds(businessEnd, currentTime) / 60;
+            
+            if (diffMinutes >= 0 && diffMinutes <= 10) {
+              setEndOfDayModalOpen(true);
+            }
+          } catch (err) {
+            console.error("Error checking end of day:", err);
           }
         }
       };

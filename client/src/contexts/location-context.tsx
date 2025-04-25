@@ -74,7 +74,14 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   
   // Get business hours from user if available
   const user = authContext?.user;
-  const businessHours = user ? JSON.parse(user.businessHours) : null;
+  let businessHours = null;
+  try {
+    if (user && user.businessHours) {
+      businessHours = JSON.parse(user.businessHours);
+    }
+  } catch (err) {
+    console.error("Failed to parse business hours in LocationContext:", err);
+  }
   const { isBusinessHours } = useTime(businessHours);
   
   // Fetch current visit if any
