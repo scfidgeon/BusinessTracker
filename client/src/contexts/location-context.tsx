@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import useGeolocation from "@/hooks/use-geolocation";
 import { useTime } from "@/hooks/use-time";
-import { useAuth, AuthContext } from "./auth-context";
+import { useAuth } from "./auth-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -21,38 +21,27 @@ interface LocationContextType {
   error: string | null;
 }
 
-export const LocationContext = createContext<LocationContextType | undefined>(undefined);
+// Initial default values
+const defaultLocationContext: LocationContextType = {
+  tracking: false,
+  startTracking: () => {},
+  stopTracking: () => {},
+  currentLocation: {
+    latitude: null,
+    longitude: null,
+    address: null,
+  },
+  currentVisit: null,
+  loading: false,
+  error: null,
+};
 
-export const LocationProvider = ({ children }: { children: ReactNode }) => {
-  // Create a default context structure that will be populated when authenticated
-  const [locationState, setLocationState] = useState<LocationContextType>({
-    tracking: false,
-    startTracking: () => {
-      console.log("Location tracking not initialized yet");
-    },
-    stopTracking: () => {
-      console.log("Location tracking not initialized yet");
-    },
-    currentLocation: {
-      latitude: null,
-      longitude: null,
-      address: null,
-    },
-    currentVisit: null,
-    loading: false,
-    error: null,
-  });
+// Create the context with default values
+export const LocationContext = createContext<LocationContextType>(defaultLocationContext);
 
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Try to use the AuthContext
-  let authContext;
-  try {
-    authContext = useContext(AuthContext);
-  } catch (err) {
-    console.error("Failed to get auth context in LocationProvider:", err);
-    return <>{children}</>; // Just render children and let higher components handle auth
-  }
+export function LocationProvider({ children }: { children: ReactNode }) {
+  // Get auth state from auth context
+  const { user } = useAuth();
   
   // Set up tracking state
   const [tracking, setTracking] = useState(false);
@@ -68,12 +57,11 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     error: geoError, 
     loading: geoLoading 
   } = useGeolocation({
-    watch: tracking && !!authContext?.user,
+    watch: tracking && !!user,
     enableHighAccuracy: true,
   });
   
-  // Get business hours from user if available
-  const user = authContext?.user;
+  // Safely parse business hours from user data
   let businessHours = null;
   try {
     if (user && user.businessHours) {
@@ -82,6 +70,8 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   } catch (err) {
     console.error("Failed to parse business hours in LocationContext:", err);
   }
+  
+  // Get business hours status
   const { isBusinessHours } = useTime(businessHours);
   
   // Fetch current visit if any
@@ -92,7 +82,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ["/api/visits/current"],
     refetchInterval: tracking ? 60000 : false, // Refetch every minute while tracking
     retry: false,
-    enabled: !!authContext?.user, // Only run query if user is authenticated
+    enabled: !!user, // Only run query if user is authenticated
   });
   
   // Start visit mutation
@@ -157,7 +147,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   
   // Define tracking functions
   const startTracking = () => {
-    if (!authContext?.user) {
+    if (!user) {
       console.log("Cannot start tracking when not logged in");
       return;
     }
@@ -165,7 +155,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const stopTracking = () => {
-    if (!authContext?.user) {
+    if (!user) {
       console.log("Cannot stop tracking when not logged in");
       return;
     }
@@ -182,51 +172,34 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   
   // Auto-start tracking during business hours
   useEffect(() => {
-    if (autoTracking && isBusinessHours && !tracking && authContext?.user) {
+    if (autoTracking && isBusinessHours && !tracking && user) {
       startTracking();
     }
-  }, [autoTracking, isBusinessHours, tracking, authContext?.user]);
+  }, [autoTracking, isBusinessHours, tracking, user]);
   
-  // Update context value when auth state or tracking state changes
-  useEffect(() => {
-    setLocationState({
-      tracking,
-      startTracking,
-      stopTracking,
-      currentLocation: {
-        latitude,
-        longitude,
-        address,
-      },
-      currentVisit,
-      loading: geoLoading || isVisitLoading,
-      error: geoError || null,
-    });
-    
-    setIsInitialized(true);
-  }, [
-    tracking, 
-    latitude, 
-    longitude, 
-    address, 
-    currentVisit, 
-    geoLoading, 
-    isVisitLoading, 
-    geoError,
-    authContext?.user
-  ]);
+  // Prepare context value
+  const contextValue: LocationContextType = {
+    tracking,
+    startTracking,
+    stopTracking,
+    currentLocation: {
+      latitude,
+      longitude,
+      address,
+    },
+    currentVisit,
+    loading: geoLoading || isVisitLoading,
+    error: geoError || null,
+  };
   
   return (
-    <LocationContext.Provider value={locationState}>
+    <LocationContext.Provider value={contextValue}>
       {children}
     </LocationContext.Provider>
   );
-};
+}
 
-export const useLocation = () => {
+export function useLocation() {
   const context = useContext(LocationContext);
-  if (context === undefined) {
-    throw new Error("useLocation must be used within a LocationProvider");
-  }
   return context;
-};
+}

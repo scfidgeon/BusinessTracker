@@ -47,33 +47,61 @@ function useDetermineBusinessHours(
   currentTime: Date,
   businessHours?: BusinessHours | null
 ): boolean {
-  if (!businessHours) {
+  try {
+    // Check if business hours exist and have required properties
+    if (!businessHours || !businessHours.days || !businessHours.startTime || !businessHours.endTime) {
+      return false;
+    }
+    
+    const { days, startTime, endTime } = businessHours;
+    
+    // Validate days array
+    if (!Array.isArray(days) || days.length === 0) {
+      return false;
+    }
+    
+    // Get current day in lowercase (e.g., "mon", "tue")
+    const currentDay = format(currentTime, "EEE").toLowerCase();
+    
+    // Check if today is a business day
+    if (!days.includes(currentDay)) {
+      return false;
+    }
+    
+    // Validate time format
+    if (!startTime.includes(":") || !endTime.includes(":")) {
+      return false;
+    }
+    
+    // Parse start and end times
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+    
+    // Validate parsed time values
+    if (
+      isNaN(startHour) || isNaN(startMinute) || 
+      isNaN(endHour) || isNaN(endMinute) ||
+      startHour < 0 || startHour > 23 || 
+      endHour < 0 || endHour > 23 ||
+      startMinute < 0 || startMinute > 59 || 
+      endMinute < 0 || endMinute > 59
+    ) {
+      return false;
+    }
+    
+    // Create Date objects for start and end times today
+    const businessStart = new Date(currentTime);
+    businessStart.setHours(startHour, startMinute, 0);
+    
+    const businessEnd = new Date(currentTime);
+    businessEnd.setHours(endHour, endMinute, 0);
+    
+    // Check if current time is between start and end
+    return currentTime >= businessStart && currentTime <= businessEnd;
+  } catch (error) {
+    console.error("Error determining business hours:", error);
     return false;
   }
-  
-  const { days, startTime, endTime } = businessHours;
-  
-  // Get current day in lowercase (e.g., "mon", "tue")
-  const currentDay = format(currentTime, "EEE").toLowerCase();
-  
-  // Check if today is a business day
-  if (!days.includes(currentDay)) {
-    return false;
-  }
-  
-  // Parse start and end times
-  const [startHour, startMinute] = startTime.split(":").map(Number);
-  const [endHour, endMinute] = endTime.split(":").map(Number);
-  
-  // Create Date objects for start and end times today
-  const businessStart = new Date(currentTime);
-  businessStart.setHours(startHour, startMinute, 0);
-  
-  const businessEnd = new Date(currentTime);
-  businessEnd.setHours(endHour, endMinute, 0);
-  
-  // Check if current time is between start and end
-  return currentTime >= businessStart && currentTime <= businessEnd;
 }
 
 export default useTime;

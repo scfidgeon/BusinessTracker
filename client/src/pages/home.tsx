@@ -91,38 +91,13 @@ const Home = () => {
     
     // Check for uninvoiced visits at the end of the business day
     useEffect(() => {
-      const checkEndOfDay = async () => {
-        // Check if it's time to show end of day prompts (end of business hours)
-        if (
-          user &&
-          user.businessHours &&
-          isBusinessHours &&
-          todayVisits.length > 0 &&
-          todayVisits.some(v => !v.hasInvoice && v.endTime)
-        ) {
-          try {
-            const businessHours = JSON.parse(user.businessHours);
-            
-            if (!businessHours || !businessHours.endTime) {
-              return; // Exit if no valid business hours
-            }
-            
-            // Parse end time
-            const [endHour, endMinute] = businessHours.endTime.split(":").map(Number);
-            
-            // Create Date object for end time today
-            const businessEnd = new Date();
-            businessEnd.setHours(endHour, endMinute, 0);
-            
-            // Check if we're within 10 minutes of business end time
-            const diffMinutes = differenceInSeconds(businessEnd, currentTime) / 60;
-            
-            if (diffMinutes >= 0 && diffMinutes <= 10) {
-              setEndOfDayModalOpen(true);
-            }
-          } catch (err) {
-            console.error("Error checking end of day:", err);
-          }
+      const checkEndOfDay = () => {
+        // Check if there are uninvoiced completed visits
+        const hasUninvoicedVisits = todayVisits.some(v => !v.hasInvoice && v.endTime);
+        
+        // Only show end of day modal if we have uninvoiced visits
+        if (hasUninvoicedVisits) {
+          setEndOfDayModalOpen(true);
         }
       };
       
