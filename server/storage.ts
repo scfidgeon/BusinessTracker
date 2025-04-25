@@ -81,9 +81,10 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     });
     
-    // Create a test user for development
+    // Don't create a duplicate test user
+    /* Note: We already have a test user above
     this.createUser({
-      username: "demo",
+      username: "test",  // Changed username to avoid conflict
       password: "password",
       businessType: "Field Service",
       businessHours: JSON.stringify({
@@ -92,6 +93,7 @@ export class MemStorage implements IStorage {
         endTime: "17:00"
       })
     });
+    */
     
     // Create a test client
     this.createClient({
