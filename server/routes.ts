@@ -1,9 +1,7 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
 import { storage } from "./storage";
 import { 
-  insertUserSchema, 
   insertClientSchema, 
   insertVisitSchema, 
   insertInvoiceSchema,
@@ -12,6 +10,7 @@ import {
 import { calculateDistance, isWithinRadius } from "./utils/location";
 import { generateInvoiceNumber } from "./utils/invoice";
 import { ZodError } from "zod";
+import { setupAuth } from "./auth";
 
 // Extend session data type to include userId
 declare module "express-session" {
@@ -21,92 +20,12 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication first
+  setupAuth(app);
+
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
-
-  // Auth routes
-  apiRouter.post("/register", async (req: Request, res: Response) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Validate business hours format
-      const businessHours = JSON.parse(userData.businessHours);
-      businessHoursSchema.parse(businessHours);
-      
-      const existingUser = await storage.getUserByUsername(userData.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      const newUser = await storage.createUser(userData);
-      
-      // Don't send the password back
-      const { password, ...userWithoutPassword } = newUser;
-      
-      req.session!.userId = newUser.id;
-      return res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
-      return res.status(500).json({ message: "Failed to register user" });
-    }
-  });
-
-  apiRouter.post("/login", async (req: Request, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-
-      const user = await storage.getUserByUsername(username);
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid username or password" });
-      }
-
-      // Don't send the password back
-      const { password: _, ...userWithoutPassword } = user;
-      
-      req.session!.userId = user.id;
-      return res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      return res.status(500).json({ message: "Failed to login" });
-    }
-  });
-
-  apiRouter.post("/logout", (req: Request, res: Response) => {
-    req.session!.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Failed to logout" });
-      }
-      res.clearCookie("onsight.sid");
-      return res.status(200).json({ message: "Logged out successfully" });
-    });
-  });
-
-  // User profile route
-  apiRouter.get("/me", async (req: Request, res: Response) => {
-    try {
-      const userId = req.session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Don't send the password back
-      const { password, ...userWithoutPassword } = user;
-      return res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      return res.status(500).json({ message: "Failed to get user" });
-    }
-  });
 
   // Client routes
   apiRouter.get("/clients", async (req: Request, res: Response) => {
