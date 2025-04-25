@@ -5,7 +5,7 @@ import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/onboarding";
 import ClientSetup from "@/pages/client-setup";
 import Home from "@/pages/home";
-import Clients from "@/pages/clients";
+import ClientsPage from "@/pages/clients-new";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import Auth from "@/pages/auth";
@@ -40,7 +40,7 @@ function Router() {
             <Route path="/auth" component={AuthPage} />
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
-            <Route path="/clients" component={Clients} /> 
+            <Route path="/clients" component={ClientsPage} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/settings" component={Settings} />
             <Route path="/" component={Home} />
