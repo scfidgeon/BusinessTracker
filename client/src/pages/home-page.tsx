@@ -31,7 +31,7 @@ const HomePage = () => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Manage your clients, track visits, and maintain important contact information.
               </p>
-              <Link href="/clients-static">
+              <Link href="/clients">
                 <Button variant="default" className="w-full">
                   View Clients
                 </Button>
@@ -50,9 +50,11 @@ const HomePage = () => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Track your location during client visits, record work time, and log activities.
               </p>
-              <Button variant="outline" className="w-full">
-                Track Visits
-              </Button>
+              <Link href="/home">
+                <Button variant="outline" className="w-full">
+                  Track Visits
+                </Button>
+              </Link>
             </CardContent>
           </Card>
           
@@ -67,9 +69,11 @@ const HomePage = () => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Generate professional invoices based on client visits and track payments.
               </p>
-              <Button variant="outline" className="w-full">
-                Manage Invoices
-              </Button>
+              <Link href="/invoices">
+                <Button variant="outline" className="w-full">
+                  Manage Invoices
+                </Button>
+              </Link>
             </CardContent>
           </Card>
           
@@ -84,9 +88,11 @@ const HomePage = () => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 View time reports, analyze business hours, and optimize your work schedule.
               </p>
-              <Button variant="outline" className="w-full">
-                View Reports
-              </Button>
+              <Link href="/settings">
+                <Button variant="outline" className="w-full">
+                  View Reports
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

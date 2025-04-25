@@ -11,7 +11,7 @@ import ClientSetup from "@/pages/client-setup";
 import Home from "@/pages/home";
 import HomePage from "@/pages/home-page";
 import ClientsPage from "@/pages/clients-new";
-import ClientsStatic from "@/pages/clients-static";
+// Removed ClientsStatic import - using ClientsPage instead
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
@@ -30,7 +30,6 @@ function Router() {
       if (!isLoading && !user && 
           location !== "/auth" && 
           location !== "/onboarding" && 
-          location !== "/clients-static" && 
           location !== "/") {
         setLocation("/auth");
       }
@@ -50,7 +49,8 @@ function Router() {
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
             <Route path="/clients" component={ClientsPage} />
-            <Route path="/clients-static" component={ClientsStatic} />
+            {/* Clients-static now points to the same component as /clients */}
+            <Route path="/clients-static" component={ClientsPage} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/settings" component={Settings} />
             <Route path="/home" component={Home} />
@@ -71,7 +71,8 @@ function Router() {
         <div className="flex-1 overflow-hidden">
           <Switch>
             <Route path="/auth" component={AuthPage} />
-            <Route path="/clients-static" component={ClientsStatic} />
+            {/* Fallback clients-static route */}
+            <Route path="/clients-static" component={ClientsPage} />
             <Route path="/" component={HomePage} />
             <Route component={AuthPage} />
           </Switch>
