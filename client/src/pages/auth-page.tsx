@@ -1,171 +1,295 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { insertUserSchema } from "@shared/schema";
+import { Loader2 } from "lucide-react";
 
-const AuthPage = () => {
-  const [username, setUsername] = useState("demo"); // Prefill with test user
-  const [password, setPassword] = useState("password"); // Prefill with test password
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [, navigate] = useLocation();
+// Simplified version of schema for login
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Extend the insert user schema for registration
+const registerSchema = insertUserSchema.extend({
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
+export default function AuthPage() {
+  const [activeTab, setActiveTab] = useState<string>("login");
+  const [location, navigate] = useLocation();
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    setIsLoggingIn(true);
-    
-    if (!username || !password) {
-      setAuthError("Username and password are required");
-      setIsLoggingIn(false);
-      return;
-    }
-    
-    try {
-      // Direct fetch call for login
-      console.log("Attempting login with:", { username, password });
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Login response not OK:", response.status, errorText);
-        throw new Error("Login failed: " + errorText);
-      }
-      
-      const userData = await response.json();
-      console.log("Login successful:", userData);
-      
-      // Check if user data was actually returned
-      if (!userData || !userData.id) {
-        console.error("No user data returned from login");
-        throw new Error("Login failed: No user data returned");
-      }
-      
-      // Show success message
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${userData.username}!`,
-      });
-      
-      // Update session status by fetching the current user
-      try {
-        const meResponse = await fetch("/api/me", {
-          credentials: "include"
-        });
-        
-        if (meResponse.ok) {
-          const currentUser = await meResponse.json();
-          console.log("Current user:", currentUser);
-        }
-      } catch (error) {
-        console.warn("Could not fetch current user, but continuing anyway", error);
-      }
-      
-      // Navigate to homepage
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+      businessType: "Field Service",
+      businessHours: JSON.stringify({
+        days: ["mon", "tue", "wed", "thu", "fri"],
+        startTime: "09:00",
+        endTime: "17:00"
+      }),
+    },
+  });
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
       navigate("/");
-    } catch (error) {
-      console.error("Login error:", error);
-      setAuthError("Invalid username or password");
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoggingIn(false);
     }
-  };
-  
+  }, [user, navigate]);
+
+  async function onLoginSubmit(data: LoginFormValues) {
+    loginMutation.mutate(data);
+  }
+
+  async function onRegisterSubmit(data: RegisterFormValues) {
+    // Remove confirmPassword as it's not part of the API schema
+    const { confirmPassword, ...registerData } = data;
+    registerMutation.mutate(registerData);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8">
-        <div className="flex flex-col items-center justify-center mb-8">
-          <div className="bg-primary-600 text-white p-4 rounded-full">
-            <MapPin className="h-8 w-8" />
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Left side - Auth form */}
+      <div className="flex flex-col justify-center flex-1 px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div className="w-full max-w-sm mx-auto lg:w-96">
+          <div className="mb-8">
+            <h1 className="text-3xl font-extrabold tracking-tight lg:text-4xl">
+              OnSight
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Sign in to your account or register to get started.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold mt-4 text-center text-primary-600">Welcome to OnSight</h1>
-          <p className="text-sm text-gray-500 text-center mt-1">Location tracking for your business</p>
+
+          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Login</CardTitle>
+                  <CardDescription>
+                    Enter your credentials to access your account
+                  </CardDescription>
+                </CardHeader>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input 
+                        id="username"
+                        {...loginForm.register("username")} 
+                        placeholder="Enter your username"
+                      />
+                      {loginForm.formState.errors.username && (
+                        <p className="text-sm text-red-500">
+                          {loginForm.formState.errors.username.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input 
+                        id="password"
+                        type="password" 
+                        {...loginForm.register("password")} 
+                        placeholder="Enter your password"
+                      />
+                      {loginForm.formState.errors.password && (
+                        <p className="text-sm text-red-500">
+                          {loginForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Logging in...
+                        </>
+                      ) : (
+                        "Login"
+                      )}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="register">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create an account</CardTitle>
+                  <CardDescription>
+                    Enter your information to create a new account
+                  </CardDescription>
+                </CardHeader>
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-username">Username</Label>
+                      <Input 
+                        id="reg-username"
+                        {...registerForm.register("username")} 
+                        placeholder="Choose a username"
+                      />
+                      {registerForm.formState.errors.username && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.username.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="businessType">Business Type</Label>
+                      <Input 
+                        id="businessType"
+                        {...registerForm.register("businessType")} 
+                        placeholder="e.g. Plumbing, Electrical, Consulting"
+                      />
+                      {registerForm.formState.errors.businessType && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.businessType.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-password">Password</Label>
+                      <Input 
+                        id="reg-password"
+                        type="password" 
+                        {...registerForm.register("password")} 
+                        placeholder="Create a password"
+                      />
+                      {registerForm.formState.errors.password && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input 
+                        id="confirmPassword"
+                        type="password" 
+                        {...registerForm.register("confirmPassword")} 
+                        placeholder="Confirm your password"
+                      />
+                      {registerForm.formState.errors.confirmPassword && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.confirmPassword.message}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        "Register"
+                      )}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="mt-1"
-                />
-              </div>
-              
-              {authError && (
-                <div className="text-red-500 text-sm">
-                  {authError}
-                </div>
-              )}
-              
-              <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                {isLoggingIn ? (
-                  <>
-                    <span className="animate-spin mr-2 inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-              
-              <div className="text-center text-sm">
-                <span className="text-gray-500">Don't have an account? </span>
-                <Link href="/onboarding" className="text-primary-600 hover:text-primary-700">
-                  Register
-                </Link>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <Link href="/clients-static">
-                  <Button 
-                    type="button"
-                    className="w-full" 
-                    variant="outline"
-                  >
-                    View Clients Demo
-                  </Button>
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+      </div>
+
+      {/* Right side - Hero/Info */}
+      <div className="relative hidden w-0 flex-1 lg:block">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-800">
+          <div className="flex flex-col items-start justify-center h-full px-20 text-white">
+            <h2 className="text-3xl font-bold">OnSight</h2>
+            <p className="mt-4 text-xl">The all-in-one app for field service businesses</p>
+            <ul className="mt-6 space-y-2 text-lg">
+              <li className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Track work locations with GPS
+              </li>
+              <li className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Manage clients and service history
+              </li>
+              <li className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Generate professional invoices
+              </li>
+              <li className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Monitor work hours and productivity
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default AuthPage;
+}

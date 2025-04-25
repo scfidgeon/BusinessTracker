@@ -49,6 +49,7 @@ export class MemStorage implements IStorage {
   private clientId: number;
   private visitId: number;
   private invoiceId: number;
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -59,6 +60,12 @@ export class MemStorage implements IStorage {
     this.clientId = 1;
     this.visitId = 1;
     this.invoiceId = 1;
+    
+    // Create memory store for sessions
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 hours - prune expired entries
+    });
     
     // Add a test user
     this.users.set(1, {

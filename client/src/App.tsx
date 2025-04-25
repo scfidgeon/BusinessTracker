@@ -1,6 +1,10 @@
 import { Switch, Route, useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/auth-context";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/onboarding";
 import ClientSetup from "@/pages/client-setup";
@@ -18,7 +22,7 @@ import StatusBar from "@/components/layout/status-bar";
 function Router() {
   // Try-catch to handle potential auth context errors
   try {
-    const { user, loading } = useAuth();
+    const { user, isLoading } = useAuth();
     const [location, setLocation] = useLocation();
 
     // Redirect to auth if not logged in (but allow access to special pages)
@@ -79,9 +83,14 @@ function Router() {
 
 function App() {
   return (
-    <div className="h-full flex flex-col bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-      <Router />
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <div className="h-full flex flex-col bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+          <Router />
+          <Toaster />
+        </div>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
