@@ -16,10 +16,13 @@ app.use(session({
   secret: 'onsight-app-secret',
   resave: false,
   saveUninitialized: false,
-  name: 'sid',
+  name: 'onsight.sid',
   cookie: { 
     secure: false, // Set to true in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax',
+    path: '/'
   },
   store: new MemoryStore({
     checkPeriod: 86400000 // 24 hours

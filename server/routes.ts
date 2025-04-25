@@ -1,5 +1,6 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
 import { storage } from "./storage";
 import { 
   insertUserSchema, 
@@ -11,6 +12,13 @@ import {
 import { calculateDistance, isWithinRadius } from "./utils/location";
 import { generateInvoiceNumber } from "./utils/invoice";
 import { ZodError } from "zod";
+
+// Extend session data type to include userId
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -74,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: "Failed to logout" });
       }
-      res.clearCookie("sid");
+      res.clearCookie("onsight.sid");
       return res.status(200).json({ message: "Logged out successfully" });
     });
   });
