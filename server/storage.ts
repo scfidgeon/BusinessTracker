@@ -72,8 +72,8 @@ export class MemStorage implements IStorage {
       userId: 1,
       name: "Test Client",
       address: "123 Main St, Anytown, USA",
-      email: "client@example.com",
-      phone: "555-123-4567",
+      latitude: 40.7128,
+      longitude: -74.0060,
       notes: "Test client for demo purposes"
     });
   }

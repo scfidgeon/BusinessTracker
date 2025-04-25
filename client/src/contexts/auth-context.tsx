@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { ZodError } from "zod";
 import { toast } from "@/hooks/use-toast";
 
@@ -42,7 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch current user
   const { data, isLoading, isError, refetch } = useQuery<User>({
     queryKey: ["/api/me"],
-    retry: false
+    retry: false,
+    queryFn: getQueryFn({ on401: "returnNull" })
   });
 
   useEffect(() => {
