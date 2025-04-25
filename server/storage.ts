@@ -54,6 +54,28 @@ export class MemStorage implements IStorage {
     this.clientId = 1;
     this.visitId = 1;
     this.invoiceId = 1;
+    
+    // Create a test user for development
+    this.createUser({
+      username: "demo",
+      password: "password",
+      businessType: "Field Service",
+      businessHours: JSON.stringify({
+        days: ["mon", "tue", "wed", "thu", "fri"],
+        startTime: "08:00",
+        endTime: "17:00"
+      })
+    });
+    
+    // Create a test client
+    this.createClient({
+      userId: 1,
+      name: "Test Client",
+      address: "123 Main St, Anytown, USA",
+      email: "client@example.com",
+      phone: "555-123-4567",
+      notes: "Test client for demo purposes"
+    });
   }
 
   // User operations
