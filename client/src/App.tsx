@@ -40,10 +40,10 @@ function Router() {
             <Route path="/auth" component={AuthPage} />
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
-            <Route path="/" component={Home} />
-            <Route path="/clients" component={Clients} />
+            <Route path="/clients" component={Clients} /> 
             <Route path="/invoices" component={Invoices} />
             <Route path="/settings" component={Settings} />
+            <Route path="/" component={Home} />
             <Route component={NotFound} />
           </Switch>
         </div>
