@@ -207,8 +207,9 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/me", (req: Request, res: Response) => {
-    console.log("Request for /api/me, authenticated:", req.isAuthenticated());
+  // Support both /api/me and /api/user endpoints for compatibility
+  const getCurrentUser = (req: Request, res: Response) => {
+    console.log("Request for current user, authenticated:", req.isAuthenticated());
     
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -218,5 +219,8 @@ export function setupAuth(app: Express) {
     const { password, ...userWithoutPassword } = req.user as SelectUser;
     console.log("Current user:", userWithoutPassword);
     res.json(userWithoutPassword);
-  });
+  };
+
+  app.get("/api/me", getCurrentUser);
+  app.get("/api/user", getCurrentUser);
 }
