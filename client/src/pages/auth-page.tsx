@@ -46,11 +46,31 @@ const AuthPage = () => {
       const userData = await response.json();
       console.log("Login successful:", userData);
       
+      // Check if user data was actually returned
+      if (!userData || !userData.id) {
+        console.error("No user data returned from login");
+        throw new Error("Login failed: No user data returned");
+      }
+      
       // Show success message
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.username}!`,
       });
+      
+      // Update session status by fetching the current user
+      try {
+        const meResponse = await fetch("/api/me", {
+          credentials: "include"
+        });
+        
+        if (meResponse.ok) {
+          const currentUser = await meResponse.json();
+          console.log("Current user:", currentUser);
+        }
+      } catch (error) {
+        console.warn("Could not fetch current user, but continuing anyway", error);
+      }
       
       // Navigate to homepage
       navigate("/");

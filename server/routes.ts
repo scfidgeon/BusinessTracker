@@ -79,8 +79,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Change the route from /me to /api/me to match the client's expectation
-  app.get("/api/me", async (req: Request, res: Response) => {
+  // User profile route
+  apiRouter.get("/me", async (req: Request, res: Response) => {
     try {
       const userId = req.session?.userId;
       if (!userId) {

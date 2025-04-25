@@ -50,10 +50,24 @@ export class MemStorage implements IStorage {
     this.clients = new Map();
     this.visits = new Map();
     this.invoices = new Map();
-    this.userId = 1;
+    this.userId = 2;
     this.clientId = 1;
     this.visitId = 1;
     this.invoiceId = 1;
+    
+    // Add a test user
+    this.users.set(1, {
+      id: 1,
+      username: "demo",
+      password: "password", // In a real app, this would be hashed
+      businessType: "Service Provider",
+      businessHours: JSON.stringify({
+        days: ["mon", "tue", "wed", "thu", "fri"],
+        startTime: "09:00",
+        endTime: "17:00"
+      }),
+      createdAt: new Date()
+    });
     
     // Create a test user for development
     this.createUser({
