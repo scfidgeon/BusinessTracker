@@ -8,7 +8,6 @@ import Home from "@/pages/home";
 import ClientsPage from "@/pages/clients-new";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
-import Auth from "@/pages/auth";
 import AuthPage from "@/pages/auth-page";
 import { LoadingScreen } from "@/components/ui/loading";
 import BottomNavigation from "@/components/layout/bottom-navigation";
