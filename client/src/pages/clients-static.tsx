@@ -15,14 +15,15 @@ const ClientsStatic = () => {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   
-  // Mock client data
-  const clients = [
+  // Client data with useState to enable adding new clients
+  const [clients, setClients] = useState([
     {
       id: 1,
       name: "Test Client",
-      address: "123 Main St, Anytown, USA"
+      address: "123 Main St, Anytown, USA",
+      notes: "This is a test client for demonstration purposes"
     }
-  ];
+  ]);
   
   const handleAddClient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,16 @@ const ClientsStatic = () => {
       });
       return;
     }
+    
+    // Create a new client and add it to the list
+    const newClient = {
+      id: clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1,
+      name,
+      address,
+      notes: notes || null
+    };
+    
+    setClients([...clients, newClient]);
     
     toast({
       title: "Client added",
@@ -87,6 +98,11 @@ const ClientsStatic = () => {
                     <div>
                       <h4 className="font-semibold">{client.name}</h4>
                       <p className="text-sm text-gray-500 mt-1">{client.address}</p>
+                      {client.notes && (
+                        <p className="text-xs text-gray-400 mt-1 italic">
+                          {client.notes}
+                        </p>
+                      )}
                     </div>
                     <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                       <ChevronRight className="h-5 w-5" />
@@ -135,6 +151,9 @@ const ClientsStatic = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Enter your client's information below
+            </p>
           </DialogHeader>
           
           <form onSubmit={handleAddClient} className="space-y-4 py-4">
