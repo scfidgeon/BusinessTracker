@@ -6,17 +6,17 @@ import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./contexts/auth-context";
-
-// Remove LocationProvider for now
-// import { LocationProvider } from "./contexts/location-context";
+import { LocationProvider } from "./contexts/location-context";
 
 const AppWithProviders = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <App />
-          <Toaster />
+          <LocationProvider>
+            <App />
+            <Toaster />
+          </LocationProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
