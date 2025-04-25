@@ -2,8 +2,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
-import { ActivityIndicator, View } from 'react-native';
 
 // Import screens
 import LoginScreen from '../screens/LoginScreen';
@@ -15,35 +15,49 @@ import VisitsScreen from '../screens/VisitsScreen';
 import InvoicesScreen from '../screens/InvoicesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-// Import icons
-import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
-
-// Create the navigators
+// Create navigators
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Auth Navigator - all screens related to authentication
+// Auth navigator for login/register screens
 function AuthNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#4F46E5',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
 }
 
-// Tab Navigator - the main app screens
+// Tab navigator for main app screens
 function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#4F46E5',
-        tabBarInactiveTintColor: '#71717A',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
           paddingBottom: 5,
+          paddingTop: 5,
           height: 60,
         },
-        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#4F46E5',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       }}
     >
       <Tab.Screen
@@ -70,7 +84,7 @@ function TabNavigator() {
         component={VisitsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="location-on" size={size} color={color} />
+            <FontAwesome name="clock-o" size={size} color={color} />
           ),
         }}
       />
@@ -96,32 +110,52 @@ function TabNavigator() {
   );
 }
 
-// Navigator for clients screens
+// Nested navigator for clients section
 function ClientsNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#4F46E5',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
       <Stack.Screen name="ClientsList" component={ClientsScreen} options={{ title: 'Clients' }} />
       <Stack.Screen name="ClientDetail" component={ClientDetailScreen} options={{ title: 'Client Details' }} />
     </Stack.Navigator>
   );
 }
 
-// Main App Navigator
+// Main app navigator
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAuth();
-  
-  // Show loading screen while checking auth status
+  const { user, loading } = useAuth();
+
+  // Show loading screen
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#4F46E5" />
-      </View>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Loading">
+            {() => (
+              <HomeScreen />
+            )}
+          </Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
     );
   }
-  
+
   return (
     <NavigationContainer>
-      {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+      {user ? (
+        <TabNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   );
 }

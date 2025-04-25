@@ -1,178 +1,159 @@
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 
-// When testing with Expo Go on a real device, 
-// we'll need to use the local IP of the computer running the backend
-// For simulator/emulator, use localhost
+// Set the base URL for API requests
+// When deployed, update this to your Replit deployment URL
 const API_URL = 'https://onsight.replit.app/api';
 
-// Function to safely store auth token
+// Create a token storage system using SecureStore
 export async function storeAuthToken(token) {
-  try {
-    await SecureStore.setItemAsync('auth_token', token);
-    return true;
-  } catch (error) {
-    console.error('Error storing auth token:', error);
-    return false;
-  }
+  await SecureStore.setItemAsync('auth_token', token);
 }
 
-// Function to retrieve auth token
 export async function getAuthToken() {
-  try {
-    const token = await SecureStore.getItemAsync('auth_token');
-    return token;
-  } catch (error) {
-    console.error('Error retrieving auth token:', error);
-    return null;
-  }
+  return await SecureStore.getItemAsync('auth_token');
 }
 
-// Function to clear auth token on logout
 export async function clearAuthToken() {
-  try {
-    await SecureStore.deleteItemAsync('auth_token');
-    return true;
-  } catch (error) {
-    console.error('Error clearing auth token:', error);
-    return false;
-  }
+  await SecureStore.deleteItemAsync('auth_token');
 }
 
-// Function to make API requests
-async function apiRequest(endpoint, method = 'GET', data = null) {
-  const url = `${API_URL}${endpoint}`;
-  
-  const headers = {
+// Create axios instance with interceptors for token handling
+const apiClient = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
+  headers: {
     'Content-Type': 'application/json',
-  };
-  
-  const options = {
-    method,
-    headers,
-    credentials: 'include',
-  };
-  
-  if (data) {
-    options.body = JSON.stringify(data);
-  }
-  
-  try {
-    const response = await fetch(url, options);
-    
-    // For successful response, parse and return JSON
-    if (response.ok) {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      return { success: true };
+  },
+});
+
+// Add token to requests if available
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getAuthToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
-    
-    // Handle error responses
-    const errorData = await response.json().catch(() => ({
-      message: response.statusText || 'Unknown error'
-    }));
-    
-    throw new Error(errorData.message || 'Request failed');
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Generic API request function
+async function apiRequest(endpoint, method = 'GET', data = null) {
+  try {
+    const response = await apiClient({
+      url: endpoint,
+      method,
+      data,
+    });
+    return response.data;
   } catch (error) {
-    console.error(`API Request Error (${endpoint}):`, error);
-    throw error;
+    if (error.response) {
+      // Server responded with an error status
+      throw new Error(error.response.data.message || 'An error occurred');
+    } else if (error.request) {
+      // Request was made but no response received
+      throw new Error('No response from server. Please check your connection.');
+    } else {
+      // Something else happened while setting up the request
+      throw new Error('Error setting up request');
+    }
   }
 }
 
-// Auth API calls
+// Authentication API methods
 export const authAPI = {
-  login: (username, password) => {
-    return apiRequest('/login', 'POST', { username, password });
+  login: async (credentials) => {
+    const data = await apiRequest('/login', 'POST', credentials);
+    if (data.token) {
+      await storeAuthToken(data.token);
+    }
+    return data;
   },
   
-  register: (userData) => {
-    return apiRequest('/register', 'POST', userData);
+  register: async (userData) => {
+    const data = await apiRequest('/register', 'POST', userData);
+    if (data.token) {
+      await storeAuthToken(data.token);
+    }
+    return data;
   },
   
-  logout: () => {
-    return apiRequest('/logout', 'POST');
+  logout: async () => {
+    await apiRequest('/logout', 'POST');
+    await clearAuthToken();
   },
   
-  getCurrentUser: () => {
-    return apiRequest('/me');
-  }
+  getCurrentUser: async () => {
+    return await apiRequest('/me', 'GET');
+  },
 };
 
-// Clients API calls
+// Clients API methods
 export const clientsAPI = {
-  getClients: () => {
-    return apiRequest('/clients');
+  getClients: async () => {
+    return await apiRequest('/clients', 'GET');
   },
   
-  getClient: (id) => {
-    return apiRequest(`/clients/${id}`);
+  getClient: async (clientId) => {
+    return await apiRequest(`/clients/${clientId}`, 'GET');
   },
   
-  createClient: (clientData) => {
-    return apiRequest('/clients', 'POST', clientData);
+  createClient: async (clientData) => {
+    return await apiRequest('/clients', 'POST', clientData);
   },
   
-  updateClient: (id, clientData) => {
-    return apiRequest(`/clients/${id}`, 'PUT', clientData);
+  updateClient: async (clientId, clientData) => {
+    return await apiRequest(`/clients/${clientId}`, 'PUT', clientData);
   },
   
-  deleteClient: (id) => {
-    return apiRequest(`/clients/${id}`, 'DELETE');
-  }
+  deleteClient: async (clientId) => {
+    return await apiRequest(`/clients/${clientId}`, 'DELETE');
+  },
 };
 
-// Visits API calls
+// Visits API methods
 export const visitsAPI = {
-  getVisits: (dateOrClientId) => {
-    let endpoint = '/visits';
-    if (dateOrClientId) {
-      if (typeof dateOrClientId === 'number') {
-        endpoint += `?clientId=${dateOrClientId}`;
-      } else {
-        endpoint += `?date=${dateOrClientId}`;
-      }
-    }
-    return apiRequest(endpoint);
+  getVisits: async (date) => {
+    const params = date ? `?date=${date}` : '';
+    return await apiRequest(`/visits${params}`, 'GET');
   },
   
-  getCurrentVisit: () => {
-    return apiRequest('/visits/current');
+  getCurrentVisit: async () => {
+    return await apiRequest('/visits/current', 'GET');
   },
   
-  startVisit: (visitData) => {
-    return apiRequest('/visits/start', 'POST', visitData);
+  startVisit: async (visitData) => {
+    return await apiRequest('/visits/start', 'POST', visitData);
   },
   
-  endVisit: (id) => {
-    return apiRequest(`/visits/${id}/end`, 'POST');
+  endVisit: async (visitId) => {
+    return await apiRequest(`/visits/${visitId}/end`, 'POST');
   },
   
-  getUninvoicedVisits: () => {
-    return apiRequest('/visits/uninvoiced');
-  }
+  getUninvoicedVisits: async () => {
+    return await apiRequest('/visits/uninvoiced', 'GET');
+  },
 };
 
-// Invoices API calls
+// Invoices API methods
 export const invoicesAPI = {
-  getInvoices: (clientId) => {
-    let endpoint = '/invoices';
-    if (clientId) {
-      endpoint += `?clientId=${clientId}`;
-    }
-    return apiRequest(endpoint);
+  getInvoices: async () => {
+    return await apiRequest('/invoices', 'GET');
   },
   
-  getInvoice: (id) => {
-    return apiRequest(`/invoices/${id}`);
+  getInvoice: async (invoiceId) => {
+    return await apiRequest(`/invoices/${invoiceId}`, 'GET');
   },
   
-  createInvoice: (invoiceData) => {
-    return apiRequest('/invoices', 'POST', invoiceData);
+  createInvoice: async (invoiceData) => {
+    return await apiRequest('/invoices', 'POST', invoiceData);
   },
   
-  updateInvoice: (id, invoiceData) => {
-    return apiRequest(`/invoices/${id}`, 'PUT', invoiceData);
-  }
+  updateInvoice: async (invoiceId, invoiceData) => {
+    return await apiRequest(`/invoices/${invoiceId}`, 'PUT', invoiceData);
+  },
 };

@@ -1,33 +1,31 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { authAPI, storeAuthToken, getAuthToken, clearAuthToken } from '../api/api';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { Alert } from 'react-native';
+import { authAPI } from '../api/api';
 
-// Create the Auth Context
-const AuthContext = createContext(null);
+// Create an authentication context
+const AuthContext = createContext();
 
-// Auth Provider component
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check for existing session on app start
+  // Load user on app start
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    async function loadUser() {
       try {
         setLoading(true);
         const userData = await authAPI.getCurrentUser();
-        if (userData && userData.id) {
-          setUser(userData);
-        }
-      } catch (error) {
-        console.log('Not authenticated:', error.message);
-        // Not setting error here as this is just a session check
+        setUser(userData);
+      } catch (err) {
+        // This might be normal if user is not logged in
+        console.log('Not logged in:', err.message);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    checkAuthStatus();
+    loadUser();
   }, []);
 
   // Login function
@@ -36,39 +34,33 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
       
-      const userData = await authAPI.login(username, password);
+      const userData = await authAPI.login({ username, password });
+      setUser(userData);
       
-      if (userData && userData.id) {
-        setUser(userData);
-        return true;
-      } else {
-        throw new Error('Invalid response from server');
-      }
-    } catch (error) {
-      setError(error.message || 'Login failed');
-      return false;
+      return userData;
+    } catch (err) {
+      setError(err.message);
+      Alert.alert('Login Failed', err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   // Register function
-  const register = async (registerData) => {
+  const register = async (userData) => {
     try {
       setLoading(true);
       setError(null);
       
-      const userData = await authAPI.register(registerData);
+      const newUser = await authAPI.register(userData);
+      setUser(newUser);
       
-      if (userData && userData.id) {
-        setUser(userData);
-        return true;
-      } else {
-        throw new Error('Registration failed');
-      }
-    } catch (error) {
-      setError(error.message || 'Registration failed');
-      return false;
+      return newUser;
+    } catch (err) {
+      setError(err.message);
+      Alert.alert('Registration Failed', err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -79,36 +71,61 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       await authAPI.logout();
-      await clearAuthToken();
       setUser(null);
-      return true;
-    } catch (error) {
-      setError(error.message || 'Logout failed');
-      return false;
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Still clear user even if API fails
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Context value
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-    register,
-    isAuthenticated: !!user,
+  // Update user profile
+  const updateProfile = async (profileData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Assuming updateProfile endpoint exists
+      const updatedUser = await authAPI.updateProfile(profileData);
+      setUser(updatedUser);
+      
+      return updatedUser;
+    } catch (err) {
+      setError(err.message);
+      Alert.alert('Update Failed', err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Provide auth context
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 // Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === null) {
+  
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 }
