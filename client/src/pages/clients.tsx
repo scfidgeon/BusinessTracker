@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingSpinner } from "@/components/ui/loading";
 import { Plus, Search, ChevronRight, History } from "lucide-react";
 import { Client, Visit } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -88,8 +87,8 @@ const Clients = () => {
     const clientVisits = allVisits
       .filter(visit => visit.clientId === clientId && visit.endTime !== null)
       .sort((a, b) => {
-        const dateA = new Date(a.endTime || a.date).getTime();
-        const dateB = new Date(b.endTime || b.date).getTime();
+        const dateA = new Date(a.endTime ?? (a.date ?? new Date())).getTime();
+        const dateB = new Date(b.endTime ?? (b.date ?? new Date())).getTime();
         return dateB - dateA;
       });
     
@@ -98,7 +97,7 @@ const Clients = () => {
     }
     
     const lastVisit = clientVisits[0];
-    const lastVisitDate = new Date(lastVisit.endTime || lastVisit.date);
+    const lastVisitDate = new Date(lastVisit.endTime ?? (lastVisit.date ?? new Date()));
     
     return {
       text: `Last visit: ${formatDistanceToNow(lastVisitDate, { addSuffix: true })}`,
@@ -112,11 +111,12 @@ const Clients = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Your Clients</h2>
         <Button
-          size="icon"
-          className="bg-primary-600 text-white rounded-full shadow-sm hover:bg-primary-700"
+          size="sm"
+          className="bg-primary-600 text-white rounded-full shadow-sm hover:bg-primary-700 flex items-center gap-1 px-3"
           onClick={() => setAddClientDialogOpen(true)}
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
+          <span>Add Client</span>
         </Button>
       </div>
       
@@ -135,7 +135,7 @@ const Clients = () => {
       <div className="space-y-3 mb-6">
         {isLoadingClients ? (
           <div className="text-center py-4">
-            <LoadingSpinner />
+            <div className="inline-block animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full" aria-hidden="true"></div>
             <p className="mt-2 text-sm text-gray-500">Loading clients...</p>
           </div>
         ) : filteredClients.length > 0 ? (
@@ -170,10 +170,26 @@ const Clients = () => {
             );
           })
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            {searchQuery
-              ? "No clients match your search"
-              : "No clients added yet. Click the + button to add a client."}
+          <div className="text-center py-12 px-4">
+            {searchQuery ? (
+              <div className="text-gray-500">No clients match your search</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="inline-flex mx-auto bg-gray-100 dark:bg-gray-800 rounded-full p-3">
+                  <Plus className="h-6 w-6 text-primary-600" />
+                </div>
+                <h3 className="text-lg font-medium">No clients yet</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  Add your first client to start tracking visits and creating invoices.
+                </p>
+                <Button 
+                  onClick={() => setAddClientDialogOpen(true)}
+                  className="mt-2"
+                >
+                  Add Your First Client
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -224,7 +240,7 @@ const Clients = () => {
               >
                 {addClient.isPending ? (
                   <>
-                    <LoadingSpinner size="small" className="mr-2" />
+                    <div className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" aria-hidden="true" />
                     Adding...
                   </>
                 ) : (
