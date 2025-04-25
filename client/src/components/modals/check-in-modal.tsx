@@ -62,7 +62,7 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
         latitude: location?.latitude,
         longitude: location?.longitude,
         address: location?.address,
-        clientId: selectedClient ? parseInt(selectedClient) : undefined,
+        clientId: selectedClient && selectedClient !== "no-client" ? parseInt(selectedClient) : undefined,
         serviceType,
         serviceDetails: serviceDetails || notes,
         billableAmount: billableAmount ? parseFloat(billableAmount) : undefined,
@@ -99,7 +99,7 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
   
   const handleSubmit = () => {
     if (location) {
-      if (!selectedClient) {
+      if (!selectedClient || (selectedClient !== "no-client" && selectedClient === "")) {
         toast({
           title: "Client selection required",
           description: "Please select a client for this visit",
@@ -151,7 +151,7 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
                   <SelectItem value="loading">Loading clients...</SelectItem>
                 ) : (
                   <>
-                    <SelectItem value="">-- Select a client --</SelectItem>
+                    <SelectItem value="no-client">-- Select a client --</SelectItem>
                     {clients?.map((client) => (
                       <SelectItem key={client.id} value={client.id.toString()}>
                         {client.name}

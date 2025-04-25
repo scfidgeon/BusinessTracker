@@ -127,9 +127,20 @@ export function setupAuth(app: Express) {
       req.login(user, (err) => {
         if (err) return next(err);
         
-        // Don't send the password back
-        const { password, ...userWithoutPassword } = user;
-        res.status(201).json(userWithoutPassword);
+        // Explicitly set the userId in the session
+        req.session.userId = user.id;
+        
+        // Save the session to ensure it's properly stored
+        req.session.save(saveErr => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+          
+          // Don't send the password back
+          const { password, ...userWithoutPassword } = user;
+          res.status(201).json(userWithoutPassword);
+        });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -154,21 +165,45 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Failed to establish login session" });
         }
         
-        // Don't send the password back
-        const { password, ...userWithoutPassword } = user;
-        console.log("Login successful:", userWithoutPassword);
-        return res.status(200).json(userWithoutPassword);
+        // Explicitly set the userId in the session
+        req.session.userId = user.id;
+        
+        // Save the session to ensure it's properly stored
+        req.session.save(err => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+          
+          // Don't send the password back
+          const { password, ...userWithoutPassword } = user;
+          console.log("Login successful:", userWithoutPassword);
+          return res.status(200).json(userWithoutPassword);
+        });
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
+    // Clear the session userId
+    if (req.session) {
+      req.session.userId = undefined;
+    }
+    
     req.logout((err) => {
       if (err) {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Failed to logout" });
       }
-      res.status(200).json({ message: "Logged out successfully" });
+      
+      // Destroy the session
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("Session destroy error:", destroyErr);
+          return res.status(500).json({ message: "Failed to destroy session" });
+        }
+        res.status(200).json({ message: "Logged out successfully" });
+      });
     });
   });
 
