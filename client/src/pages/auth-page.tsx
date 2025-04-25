@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoadingSpinner } from "@/components/ui/loading";
 import { MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
 
-const Auth = () => {
+const AuthPage = () => {
   const [username, setUsername] = useState("demo"); // Prefill with test user
   const [password, setPassword] = useState("password"); // Prefill with test password
   const [authError, setAuthError] = useState<string | null>(null);
@@ -28,6 +27,7 @@ const Auth = () => {
     
     try {
       // Direct fetch call for login
+      console.log("Attempting login with:", { username, password });
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { 
@@ -38,7 +38,9 @@ const Auth = () => {
       });
       
       if (!response.ok) {
-        throw new Error("Login failed");
+        const errorText = await response.text();
+        console.error("Login response not OK:", response.status, errorText);
+        throw new Error("Login failed: " + errorText);
       }
       
       const userData = await response.json();
@@ -134,4 +136,4 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default AuthPage;

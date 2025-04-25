@@ -9,6 +9,7 @@ import Clients from "@/pages/clients";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import Auth from "@/pages/auth";
+import AuthPage from "@/pages/auth-page";
 import { LoadingScreen } from "@/components/ui/loading";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import StatusBar from "@/components/layout/status-bar";
@@ -36,7 +37,7 @@ function Router() {
         
         <div className="flex-1 overflow-hidden">
           <Switch>
-            <Route path="/auth" component={Auth} />
+            <Route path="/auth" component={AuthPage} />
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
             <Route path="/" component={Home} />
@@ -58,8 +59,8 @@ function Router() {
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-hidden">
           <Switch>
-            <Route path="/auth" component={Auth} />
-            <Route component={Auth} />
+            <Route path="/auth" component={AuthPage} />
+            <Route component={AuthPage} />
           </Switch>
         </div>
       </div>
