@@ -6,6 +6,7 @@ import Onboarding from "@/pages/onboarding";
 import ClientSetup from "@/pages/client-setup";
 import Home from "@/pages/home";
 import ClientsPage from "@/pages/clients-new";
+import ClientsStatic from "@/pages/clients-static";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
@@ -40,6 +41,7 @@ function Router() {
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
             <Route path="/clients" component={ClientsPage} />
+            <Route path="/clients-static" component={ClientsStatic} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/settings" component={Settings} />
             <Route path="/" component={Home} />
@@ -59,6 +61,7 @@ function Router() {
         <div className="flex-1 overflow-hidden">
           <Switch>
             <Route path="/auth" component={AuthPage} />
+            <Route path="/clients-static" component={ClientsStatic} />
             <Route component={AuthPage} />
           </Switch>
         </div>
