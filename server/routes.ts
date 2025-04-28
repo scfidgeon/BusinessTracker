@@ -172,14 +172,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
+      console.log("Visit start request body:", req.body);
+      
       const { latitude, longitude, address } = req.body;
       
       if (!latitude || !longitude) {
+        console.error("Missing required location data:", { latitude, longitude });
         return res.status(400).json({ message: "Latitude and longitude are required" });
       }
 
       // Check if location matches any client
       const clients = await storage.getClientsByUserId(userId);
+      console.log("User clients:", clients);
       
       let matchedClient = null;
       let isKnownLocation = false;
@@ -196,17 +200,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (isWithinRadius(distance, 0.1)) { // 0.1 km = 100m radius
             matchedClient = client;
             isKnownLocation = true;
+            console.log("Matched client by location:", matchedClient);
             break;
           }
         }
       }
       
       // Extract service-related fields from request
-      const { serviceType, serviceDetails, billableAmount, notes } = req.body;
+      const { serviceType, serviceDetails, billableAmount, notes, clientId } = req.body;
+      console.log("Service data:", { serviceType, serviceDetails, billableAmount });
+      
+      // Determine which client to use
+      let finalClientId = null;
+      if (matchedClient) {
+        finalClientId = matchedClient.id;
+      } else if (clientId) {
+        finalClientId = typeof clientId === 'string' ? parseInt(clientId) : clientId;
+      }
+      
+      console.log("Final client ID:", finalClientId);
       
       const visitData = insertVisitSchema.parse({
         userId,
-        clientId: matchedClient?.id || (req.body.clientId ? parseInt(req.body.clientId) : null),
+        clientId: finalClientId,
         address: address || (matchedClient ? matchedClient.address : "Unknown location"),
         startTime: new Date(),
         latitude,
@@ -217,12 +233,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         billableAmount
       });
 
+      console.log("Parsed visit data:", visitData);
+      
       const newVisit = await storage.createVisit(visitData);
+      console.log("Created new visit:", newVisit);
+      
       return res.status(201).json(newVisit);
     } catch (error) {
+      console.error("Error starting visit:", error);
+      
       if (error instanceof ZodError) {
+        console.error("Validation error:", error.errors);
         return res.status(400).json({ message: error.errors });
       }
+      
       return res.status(500).json({ message: "Failed to start visit" });
     }
   });

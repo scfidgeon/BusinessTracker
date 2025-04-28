@@ -58,19 +58,26 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
   // Start visit mutation
   const startVisit = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/visits/start", {
+      // Log the request data for debugging
+      const requestData = {
         latitude: location?.latitude,
         longitude: location?.longitude,
-        address: location?.address,
-        clientId: selectedClient && selectedClient !== "no-client" ? parseInt(selectedClient) : undefined,
+        address: location?.address || "Manual check-in",
+        clientId: selectedClient && selectedClient !== "no-client" ? parseInt(selectedClient) : null,
         serviceType,
         serviceDetails: serviceDetails || notes,
-        billableAmount: billableAmount ? parseFloat(billableAmount) : undefined,
+        billableAmount: billableAmount ? parseFloat(billableAmount) : null,
         notes,
-      });
-      return response.json();
+      };
+      console.log("Starting visit with data:", requestData);
+      
+      const response = await apiRequest("POST", "/api/visits/start", requestData);
+      const data = await response.json();
+      console.log("Visit started response:", data);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Visit successfully started:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/visits"] });
       toast({
         title: "Check-in successful",
@@ -78,10 +85,11 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
       });
       onClose();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error starting visit:", error);
       toast({
         title: "Check-in failed",
-        description: "There was a problem starting your visit",
+        description: error instanceof Error ? error.message : "There was a problem starting your visit",
         variant: "destructive",
       });
     },
