@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ChevronRight, History } from "lucide-react";
+import { Plus, Search, ChevronRight, History, Phone, Mail } from "lucide-react";
 import { Client, Visit } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -83,10 +83,15 @@ const ClientsPage = () => {
   };
   
   // Filter clients based on search query
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClients = clients.filter((client) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      client.name.toLowerCase().includes(query) ||
+      client.address.toLowerCase().includes(query) ||
+      (client.email && client.email.toLowerCase().includes(query)) ||
+      (client.phone && client.phone.toLowerCase().includes(query))
+    );
+  });
   
   // Calculate last visit for each client
   const getLastVisitInfo = (clientId: number) => {
@@ -131,7 +136,7 @@ const ClientsPage = () => {
         <Input
           type="search"
           id="search-clients"
-          placeholder="Search clients..."
+          placeholder="Search by name, address, email or phone..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-3 py-2"
@@ -149,13 +154,29 @@ const ClientsPage = () => {
             const visitInfo = getLastVisitInfo(client.id);
             
             return (
-              <Link href={`/clients/${client.id}`} className="block">
-                <Card key={client.id} className="shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <Link key={client.id} href={`/clients/${client.id}`} className="block">
+                <Card className="shadow-sm hover:shadow-md transition-all cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-semibold">{client.name}</h4>
                         <p className="text-sm text-gray-500 mt-1">{client.address}</p>
+                        {(client.phone || client.email) && (
+                          <div className="flex flex-wrap mt-2 gap-x-4 gap-y-1">
+                            {client.phone && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Phone className="h-3 w-3 mr-1" />
+                                <span>{client.phone}</span>
+                              </div>
+                            )}
+                            {client.email && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Mail className="h-3 w-3 mr-1" />
+                                <span>{client.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <ChevronRight className="h-5 w-5" />
@@ -207,6 +228,9 @@ const ClientsPage = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
+            <DialogDescription>
+              Enter client details to add them to your list.
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleAddClient} className="space-y-4 py-4">
