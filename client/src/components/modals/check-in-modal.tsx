@@ -106,33 +106,28 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
   };
   
   const handleSubmit = () => {
-    if (location) {
-      if (!selectedClient || (selectedClient !== "no-client" && selectedClient === "")) {
-        toast({
-          title: "Client selection required",
-          description: "Please select a client for this visit",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!serviceType) {
-        toast({
-          title: "Service type required",
-          description: "Please select the type of service you're providing",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      startVisit.mutate();
-    } else {
+    // Client selection validation
+    if (!selectedClient || (selectedClient !== "no-client" && selectedClient === "")) {
       toast({
-        title: "Location required",
-        description: "Unable to get your current location",
+        title: "Client selection required",
+        description: "Please select a client for this visit",
         variant: "destructive",
       });
+      return;
     }
+    
+    // Service type validation
+    if (!serviceType) {
+      toast({
+        title: "Service type required",
+        description: "Please select the type of service you're providing",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Even without location, we should be able to start the service
+    startVisit.mutate();
   };
   
   return (
@@ -247,7 +242,7 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={startVisit.isPending || !location}
+            disabled={startVisit.isPending}
           >
             {startVisit.isPending ? (
               <div className="flex items-center">
