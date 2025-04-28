@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingSpinner } from "@/components/ui/loading";
 import { MoreVertical } from "lucide-react";
 import { Client } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -33,6 +32,8 @@ const ClientSetup = () => {
       const response = await apiRequest("POST", "/api/clients", {
         name,
         address,
+        email,
+        phone,
         notes,
       });
       return response.json();
@@ -41,6 +42,8 @@ const ClientSetup = () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setName("");
       setAddress("");
+      setEmail("");
+      setPhone("");
       setNotes("");
       toast({
         title: "Client added",
@@ -177,7 +180,7 @@ const ClientSetup = () => {
             >
               {addClient.isPending ? (
                 <>
-                  <LoadingSpinner size="small" className="mr-2" />
+                  <div className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                   Adding...
                 </>
               ) : (
@@ -193,7 +196,7 @@ const ClientSetup = () => {
       <div className="space-y-3 mb-6">
         {isLoadingClients ? (
           <div className="text-center py-4">
-            <LoadingSpinner />
+            <div className="inline-block animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
             <p className="mt-2 text-sm text-gray-500">Loading clients...</p>
           </div>
         ) : clients && clients.length > 0 ? (

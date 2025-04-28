@@ -19,6 +19,8 @@ const ClientsPage = () => {
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   
   // Fetch clients
@@ -37,6 +39,8 @@ const ClientsPage = () => {
       const response = await apiRequest("POST", "/api/clients", {
         name,
         address,
+        email: email || null,
+        phone: phone || null,
         notes: notes || null,
       });
       return response.json();
@@ -45,6 +49,8 @@ const ClientsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setName("");
       setAddress("");
+      setEmail("");
+      setPhone("");
       setNotes("");
       setAddClientDialogOpen(false);
       toast({
@@ -221,6 +227,28 @@ const ClientsPage = () => {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="123 Main St, City, State"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="client-email">Email Address (Optional)</Label>
+              <Input
+                type="email"
+                id="client-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="client@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="client-phone">Phone Number (Optional)</Label>
+              <Input
+                type="tel"
+                id="client-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
               />
             </div>
             
