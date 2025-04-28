@@ -13,6 +13,7 @@ import HomePage from "@/pages/home-page";
 import ClientsPage from "@/pages/clients-new";
 // Removed ClientsStatic import - using ClientsPage instead
 import Invoices from "@/pages/invoices";
+import InvoiceDetail from "@/pages/invoice-detail";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
 import { LoadingScreen } from "@/components/ui/loading";
@@ -52,6 +53,7 @@ function Router() {
             {/* Clients-static now points to the same component as /clients */}
             <Route path="/clients-static" component={ClientsPage} />
             <Route path="/invoices" component={Invoices} />
+            <Route path="/invoices/:id" component={InvoiceDetail} />
             <Route path="/settings" component={Settings} />
             <Route path="/home" component={Home} />
             <Route path="/" component={HomePage} />
