@@ -47,6 +47,7 @@ const Home = () => {
   try {
     const { user } = useAuth();
     const { currentLocation, tracking, startTracking, stopTracking, currentVisit } = useLocation();
+    const endVisitMutation = useEndVisitMutation();
 
     // Parse business hours safely
     let parsedBusinessHours = null;
@@ -254,11 +255,7 @@ const Home = () => {
                               size="sm"
                               variant="destructive"
                               className="text-xs px-3 py-1 h-auto"
-                              onClick={() => {
-                                // End this specific visit
-                                const endVisitMutation = createEndVisitMutation(visit.id);
-                                endVisitMutation.mutate();
-                              }}
+                              onClick={() => endVisitMutation.mutate(visit.id)}
                             >
                               End Visit
                             </Button>
