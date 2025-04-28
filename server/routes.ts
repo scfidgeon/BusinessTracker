@@ -176,32 +176,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { latitude, longitude, address } = req.body;
       
-      if (!latitude || !longitude) {
-        console.error("Missing required location data:", { latitude, longitude });
-        return res.status(400).json({ message: "Latitude and longitude are required" });
-      }
-
+      // Location data is now optional
+      let matchedClient = null;
+      let isKnownLocation = false;
+      
       // Check if location matches any client
       const clients = await storage.getClientsByUserId(userId);
       console.log("User clients:", clients);
       
-      let matchedClient = null;
-      let isKnownLocation = false;
-      
-      for (const client of clients) {
-        if (client.latitude && client.longitude) {
-          const distance = calculateDistance(
-            latitude, 
-            longitude, 
-            client.latitude, 
-            client.longitude
-          );
-          
-          if (isWithinRadius(distance, 0.1)) { // 0.1 km = 100m radius
-            matchedClient = client;
-            isKnownLocation = true;
-            console.log("Matched client by location:", matchedClient);
-            break;
+      // Only try to match by location if coordinates are provided
+      if (latitude && longitude) {
+        for (const client of clients) {
+          if (client.latitude && client.longitude) {
+            const distance = calculateDistance(
+              latitude, 
+              longitude, 
+              client.latitude, 
+              client.longitude
+            );
+            
+            if (isWithinRadius(distance, 0.1)) { // 0.1 km = 100m radius
+              matchedClient = client;
+              isKnownLocation = true;
+              console.log("Matched client by location:", matchedClient);
+              break;
+            }
           }
         }
       }
@@ -223,11 +222,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const visitData = insertVisitSchema.parse({
         userId,
         clientId: finalClientId,
-        address: address || (matchedClient ? matchedClient.address : "Unknown location"),
+        address: address || (matchedClient ? matchedClient.address : "Manual check-in"),
         startTime: new Date(),
-        latitude,
-        longitude,
-        isKnownLocation,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        isKnownLocation: isKnownLocation || false,
         serviceType,
         serviceDetails,
         billableAmount
