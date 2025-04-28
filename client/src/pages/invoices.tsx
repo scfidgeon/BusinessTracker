@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/location-utils";
 import { format } from "date-fns";
+import { Link } from "wouter";
 import EndOfDayModal from "@/components/modals/end-of-day-modal";
 
 const Invoices = () => {
@@ -220,7 +221,7 @@ const Invoices = () => {
                   <div>
                     <h4 className="font-semibold">{getClientName(invoice.clientId)}</h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      {format(new Date(invoice.date), "MMMM d, yyyy")}
+                      {invoice.date ? format(new Date(invoice.date), "MMMM d, yyyy") : "N/A"}
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
@@ -239,14 +240,16 @@ const Invoices = () => {
                     <span>Invoice #</span>
                     <span className="font-medium ml-1">{invoice.invoiceNumber}</span>
                   </div>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="text-primary-600 text-sm font-medium flex items-center p-0 h-auto"
-                  >
-                    View
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                  <Link href={`/invoices/${invoice.id}`}>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-primary-600 text-sm font-medium flex items-center p-0 h-auto"
+                    >
+                      View
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -280,7 +283,7 @@ const Invoices = () => {
                     <SelectItem value="loading">Loading visits...</SelectItem>
                   ) : (
                     uninvoicedVisits.map((visit) => {
-                      const visitDate = format(new Date(visit.date), "MMM d");
+                      const visitDate = visit.date ? format(new Date(visit.date), "MMM d") : "N/A";
                       const clientName = visit.clientId 
                         ? getClientName(visit.clientId)
                         : visit.address || "Unknown location";
@@ -366,7 +369,7 @@ const Invoices = () => {
               >
                 {createInvoice.isPending ? (
                   <>
-                    <LoadingSpinner size="small" className="mr-2" />
+                    <div className="animate-spin h-4 w-4 border-2 border-primary-600 border-t-transparent rounded-full mr-2" />
                     Creating...
                   </>
                 ) : (

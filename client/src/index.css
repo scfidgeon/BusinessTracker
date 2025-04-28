@@ -61,3 +61,18 @@
   }
 }
 
+/* Print styles for invoice details */
+@media print {
+  body {
+    background: white;
+  }
+  .print-mode button, 
+  .print-mode nav, 
+  .print-mode footer {
+    display: none !important;
+  }
+  @page {
+    margin: 0.5cm;
+  }
+}
+
