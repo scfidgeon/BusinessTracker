@@ -11,6 +11,7 @@ import { Client, Visit } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "wouter";
 
 const ClientsPage = () => {
   const queryClient = useQueryClient();
@@ -142,30 +143,32 @@ const ClientsPage = () => {
             const visitInfo = getLastVisitInfo(client.id);
             
             return (
-              <Card key={client.id} className="shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold">{client.name}</h4>
-                      <p className="text-sm text-gray-500 mt-1">{client.address}</p>
+              <Link href={`/clients/${client.id}`} className="block">
+                <Card key={client.id} className="shadow-sm hover:shadow-md transition-all cursor-pointer">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{client.name}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{client.address}</p>
+                      </div>
+                      <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <ChevronRight className="h-5 w-5" />
+                      </div>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
-                </CardContent>
-                <div className="bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-b-lg flex justify-between text-sm">
-                  <div className="flex items-center">
-                    <History className="text-gray-400 h-4 w-4 mr-1" />
-                    <span className="text-gray-500">{visitInfo.text}</span>
-                  </div>
-                  {visitInfo.count !== undefined && (
-                    <div className="text-primary font-medium">
-                      {visitInfo.count} visit{visitInfo.count !== 1 ? 's' : ''}
+                  </CardContent>
+                  <div className="bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-b-lg flex justify-between text-sm">
+                    <div className="flex items-center">
+                      <History className="text-gray-400 h-4 w-4 mr-1" />
+                      <span className="text-gray-500">{visitInfo.text}</span>
                     </div>
-                  )}
-                </div>
-              </Card>
+                    {visitInfo.count !== undefined && (
+                      <div className="text-primary font-medium">
+                        {visitInfo.count} visit{visitInfo.count !== 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </Link>
             );
           })
         ) : (

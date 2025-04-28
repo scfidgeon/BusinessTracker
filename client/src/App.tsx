@@ -12,6 +12,7 @@ import Home from "@/pages/home";
 import HomePage from "@/pages/home-page";
 import ClientsPage from "@/pages/clients-new";
 // Removed ClientsStatic import - using ClientsPage instead
+import ClientDetail from "@/pages/client-detail";
 import Invoices from "@/pages/invoices";
 import InvoiceDetail from "@/pages/invoice-detail";
 import Settings from "@/pages/settings";
@@ -50,6 +51,7 @@ function Router() {
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/client-setup" component={ClientSetup} />
             <Route path="/clients" component={ClientsPage} />
+            <Route path="/clients/:id" component={ClientDetail} />
             {/* Clients-static now points to the same component as /clients */}
             <Route path="/clients-static" component={ClientsPage} />
             <Route path="/invoices" component={Invoices} />
