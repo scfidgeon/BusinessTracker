@@ -18,6 +18,8 @@ const ClientSetup = () => {
   
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   
   // Fetch existing clients
@@ -114,6 +116,40 @@ const ClientSetup = () => {
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full"
                 placeholder="123 Main St, City, State"
+              />
+            </div>
+
+            <div>
+              <Label 
+                htmlFor="client-email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Email Address (Optional)
+              </Label>
+              <Input
+                type="email"
+                id="client-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                placeholder="client@example.com"
+              />
+            </div>
+
+            <div>
+              <Label 
+                htmlFor="client-phone"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Phone Number (Optional)
+              </Label>
+              <Input
+                type="tel"
+                id="client-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full"
+                placeholder="(555) 123-4567"
               />
             </div>
             

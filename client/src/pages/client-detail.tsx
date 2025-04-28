@@ -11,7 +11,9 @@ import {
   Clock,
   FileText,
   ChevronRight,
-  Settings
+  Settings,
+  Phone,
+  Mail
 } from "lucide-react";
 import { Client, Visit, Invoice } from "@shared/schema";
 import { formatPrice, formatTimeRange } from "@/lib/location-utils";
@@ -115,6 +117,25 @@ const ClientDetail = () => {
                   <MapPin className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
                   <span>{client.address}</span>
                 </div>
+                
+                {client.phone && (
+                  <div className="flex items-start text-gray-500 mb-2">
+                    <Phone className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
+                    <a href={`tel:${client.phone}`} className="hover:underline">
+                      {client.phone}
+                    </a>
+                  </div>
+                )}
+                
+                {client.email && (
+                  <div className="flex items-start text-gray-500 mb-2">
+                    <Mail className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
+                    <a href={`mailto:${client.email}`} className="hover:underline">
+                      {client.email}
+                    </a>
+                  </div>
+                )}
+                
                 {client.notes && (
                   <div className="mt-3 text-sm text-gray-700 dark:text-gray-300">
                     <h3 className="font-medium mb-1">Notes:</h3>
