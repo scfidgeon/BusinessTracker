@@ -296,12 +296,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const visits = await storage.getVisitsByUserId(userId);
       const currentVisit = visits.find(v => v.endTime === null);
 
+      // Return empty object instead of 404 when no active visit
       if (!currentVisit) {
-        return res.status(404).json({ message: "No active visit found" });
+        return res.status(200).json(null);
       }
 
       return res.status(200).json(currentVisit);
     } catch (error) {
+      console.error("Error getting current visit:", error);
       return res.status(500).json({ message: "Failed to get current visit" });
     }
   });

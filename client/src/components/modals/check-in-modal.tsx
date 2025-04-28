@@ -78,7 +78,9 @@ const CheckInModal = ({ open, onClose, location }: CheckInModalProps) => {
     },
     onSuccess: (data) => {
       console.log("Visit successfully started:", data);
+      // Invalidate both visits and current visit queries
       queryClient.invalidateQueries({ queryKey: ["/api/visits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits/current"] });
       toast({
         title: "Check-in successful",
         description: "Your visit has been started with service details",

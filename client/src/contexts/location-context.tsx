@@ -78,11 +78,15 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const { 
     data: visitData,
     isLoading: isVisitLoading,
+    refetch: refetchCurrentVisit
   } = useQuery<Visit>({
     queryKey: ["/api/visits/current"],
-    refetchInterval: tracking ? 60000 : false, // Refetch every minute while tracking
-    retry: false,
+    refetchInterval: tracking ? 30000 : false, // Refetch every 30 seconds while tracking
+    retry: 1,
     enabled: !!user, // Only run query if user is authenticated
+    refetchOnWindowFocus: true,
+    // Don't throw on 404 errors
+    throwOnError: false
   });
   
   // Start visit mutation
