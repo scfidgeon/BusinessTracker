@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "@/contexts/location-context";
@@ -12,6 +12,35 @@ import { formatDuration, formatTimeRange, formatPrice } from "@/lib/location-uti
 import CheckInModal from "@/components/modals/check-in-modal";
 import EndOfDayModal from "@/components/modals/end-of-day-modal";
 import { differenceInSeconds } from "date-fns";
+import { toast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
+// Since useMutation is a React hook, we need to define a custom hook instead
+function useEndVisitMutation() {
+  const endVisitMutation = useMutation({
+    mutationFn: async (visitId: number) => {
+      const response = await apiRequest("POST", `/api/visits/${visitId}/end`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Visit ended",
+        description: "Your visit has been ended successfully",
+      });
+      // Refresh visits data
+      queryClient.invalidateQueries({ queryKey: ["/api/visits"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error ending visit",
+        description: error.message || "Failed to end visit",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  return endVisitMutation;
+};
 
 const Home = () => {
   // Try-catch for using each context to make component more resilient
@@ -171,9 +200,7 @@ const Home = () => {
             </div>
           ) : todayVisits.length > 0 ? (
             todayVisits.map((visit) => {
-              // Skip current visits that haven't ended
-              if (!visit.endTime) return null;
-              
+              // Display all visits, including active ones
               return (
                 <Card key={visit.id} className="shadow-sm">
                   <CardContent className="p-4">
@@ -199,7 +226,7 @@ const Home = () => {
                             )}
                           </span>
                           <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded ml-2">
-                            {formatDuration(visit.duration)}
+                            {visit.endTime ? formatDuration(visit.duration) : "In Progress"}
                           </span>
                         </div>
                         {visit.billableAmount && (
@@ -217,7 +244,26 @@ const Home = () => {
                         )}
                       </div>
                       <div className="flex flex-col items-end">
-                        {visit.hasInvoice ? (
+                        {!visit.endTime ? (
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full flex items-center">
+                              <span className="w-2 h-2 bg-blue-600 rounded-full mr-1 animate-pulse"></span>
+                              Active
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs px-3 py-1 h-auto"
+                              onClick={() => {
+                                // End this specific visit
+                                const endVisitMutation = createEndVisitMutation(visit.id);
+                                endVisitMutation.mutate();
+                              }}
+                            >
+                              End Visit
+                            </Button>
+                          </div>
+                        ) : visit.hasInvoice ? (
                           <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">
                             Invoiced
                           </span>
